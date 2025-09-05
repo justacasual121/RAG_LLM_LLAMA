@@ -3,6 +3,9 @@
 
 This project implements a **Retrieval-Augmented Generation (RAG)** pipeline that allows you to query PDF documents using a **LLaMA** language model. It extracts text from PDFs, embeds the text for retrieval, and uses context-aware generation to answer user questions.
 
+A **sample PDF** (`Bjarne-Stroustrup-The-C-Plus-Plus-Programming-Language-4th-Edition.pdf`) has been included for testing, which is a C++ programming book.
+
+---
 ---
 
 ## Features
@@ -43,7 +46,7 @@ file_path = "D:/path/to/your/file.pdf"
 2. Run the script:
 
 ```bash
-python pdf_rag.py
+Rag_LLM.py
 ```
 
 3. Interactively ask questions in the terminal. Type `exit` to quit.
@@ -120,3 +123,4 @@ full_input = f"/set num_predict 400\n{prompt}"
 - `subprocess` – calling LLaMA model via Ollama.
 
 ---
+
