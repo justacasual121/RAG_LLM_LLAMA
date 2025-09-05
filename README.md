@@ -1,108 +1,122 @@
-﻿# RAG_LLM_LLAMA
-Local RAG with PDF, Ollama, and FAISS
-This project is a simple yet powerful Retrieval-Augmented Generation (RAG) system that runs entirely on your local machine. It allows you to "chat" with a PDF document by indexing its content into a vector database and using a local Large Language Model (LLM) through Ollama to answer questions based on the retrieved context.
 
-Features
-PDF Processing: Extracts text directly from any PDF file.
+# PDF RAG Pipeline with LLaMA
 
-Text Chunking: Splits the document text into manageable, semantic chunks.
+This project implements a **Retrieval-Augmented Generation (RAG)** pipeline that allows you to query PDF documents using a **LLaMA** language model. It extracts text from PDFs, embeds the text for retrieval, and uses context-aware generation to answer user questions.
 
-Vector Embeddings: Uses sentence-transformers to convert text chunks into numerical vectors.
+---
 
-Efficient Similarity Search: Employs FAISS (Facebook AI Similarity Search) for fast and efficient retrieval of relevant chunks.
+## Features
 
-Local LLM Integration: Connects to any LLM running via Ollama.
+- Extract text from any PDF file.
+- Split text into chunks for embedding and retrieval.
+- Use **SentenceTransformers** for high-quality semantic embeddings.
+- Store embeddings in **FAISS** for fast similarity search.
+- Query **LLaMA 3.2 1B** for answers based on retrieved chunks.
 
-Interactive CLI: Provides a simple command-line interface to ask questions about your document.
+---
 
-Completely Local: No API keys or internet connection required after initial setup. Your data stays on your machine.
+## Installation
 
-How It Works
-The script follows the standard RAG pipeline:
+1. Clone the repository:
 
-Load & Chunk: The script first loads the specified PDF, extracts all the text, and splits it into smaller chunks.
+```bash
+git clone https://github.com/justacasual121/RAG_LLM_LLAMA.git
+cd RAG_LLM_LLAMA
+```
 
-Embed & Index: Each chunk is then converted into a vector embedding. These embeddings are stored in a FAISS index for quick similarity searches.
+2. Install dependencies:
 
-Retrieve: When you ask a question, your query is also converted into a vector. FAISS finds the most similar text chunks from the indexed PDF content.
-
-Generate: The retrieved text chunks (the "context") are combined with your original question into a detailed prompt. This prompt is then sent to your local LLM via Ollama, which generates an answer based on the provided context.
-
-This process ensures that the LLM's answers are grounded in the content of your document, reducing hallucinations and providing accurate responses.
-
-Prerequisites
-Before you begin, ensure you have the following installed:
-
-Python 3.8+
-
-Ollama: Follow the installation instructions on the official Ollama website.
-
-A Local LLM: Pull a model to use for generation. This script is configured for llama3.2:1b, but you can use others.
-
-ollama pull llama3.2:1b
-
-Installation & Usage
-Install Dependencies:
-
+```bash
 pip install -r requirements.txt
+```
 
-Update Script: Open rag_ollama.py and set the file_path variable to your PDF's location.
+---
 
-Run:
+## Usage
 
-python rag_ollama.py
+1. Update the `file_path` in `pdf_rag.py` to point to your PDF file:
 
-The script will index the PDF and then prompt you for questions.
+```python
+file_path = "D:/path/to/your/file.pdf"
+```
 
-Customization and Performance Tuning
-You can easily tweak the RAG pipeline by modifying the parameters in the if __name__ == "__main__": block or in the configuration section of rag_ollama.py.
+2. Run the script:
 
-1. Sentences Per Chunk
-This parameter controls how many sentences are grouped into a single chunk for embedding.
+```bash
+python pdf_rag.py
+```
 
-Code Location: chunk_text(pdf_text, sentences_per_chunk=15)
+3. Interactively ask questions in the terminal. Type `exit` to quit.
 
-Impact:
+---
 
-Fewer Sentences (e.g., 3-5): Creates more, smaller chunks. This can lead to more precise context retrieval, as the retrieved chunks are highly focused. However, it increases the initial processing time.
+## Configuration Notes
 
-More Sentences (e.g., 15-20): Creates fewer, larger chunks. This speeds up the initial indexing process. The trade-off is that retrieved chunks might contain more irrelevant information ("noise") which could confuse the LLM.
+### 1. Chunking (`sentences_per_chunk`)
+- `chunk_text()` splits the PDF into chunks of sentences.
+- **More sentences per chunk** → fewer chunks → faster FAISS indexing and retrieval, but less granular retrieval.
+- **Fewer sentences per chunk** → more chunks → finer retrieval but slower processing.
 
-2. FAISS Batch Size
-This parameter determines how many text chunks are encoded into vectors at once.
+Example:
 
-Code Location: build_faiss_index(chunks, batch_size=64)
+```python
+chunks = chunk_text(pdf_text, sentences_per_chunk=12)
+```
 
-Impact:
+---
 
-A higher batch size significantly speeds up the embedding process by maximizing the use of your CPU or GPU's parallel processing capabilities.
+### 2. FAISS Embedding Batch Size (`batch_size`)
+- `build_faiss_index()` generates embeddings in batches.
+- **Higher batch size** → faster embedding generation (if enough RAM), but uses more memory.
+- **Lower batch size** → slower but more memory-efficient.
 
-The main limitation is your system's RAM (or VRAM on a GPU). If you set the batch size too high, you will run into an "Out of Memory" error. Increase this value as high as your hardware can comfortably handle for the fastest indexing.
+Example:
 
-3. Sentence-Transformer Model
-This is the model that understands the meaning of the text and converts it into vectors.
+```python
+embedder, index, df = build_faiss_index(chunks, batch_size=128)
+```
 
-Code Location: In the build_faiss_index function, change the model name:
+---
 
+### 3. Sentence Transformer Model
+- Current model: `all-distilroberta-v1`
+- **Other options:**
+  - `all-MiniLM-L6-v2` → faster, smaller, CPU-friendly.
+  - `all-mpnet-base-v2` → higher accuracy for retrieval tasks.
+- Change the model in `build_faiss_index()`:
+
+```python
 embedder = SentenceTransformer("all-distilroberta-v1")
+```
 
-Impact:
+---
 
-The default model, "all-distilroberta-v1", is a good balance of performance and speed.
+### 4. LLaMA Model
+- Current model: `llama3.2:1b` via Ollama.
+- You can adjust the number of tokens generated per answer by using `/set num_predict` in the prompt or globally in Ollama.
+- Example in Python:
 
-You can swap it for other pre-trained models from the Hugging Face Hub. For example, a lighter-weight but still powerful alternative is "all-MiniLM-L6-v2".
+```python
+full_input = f"/set num_predict 400\n{prompt}"
+```
 
-Changing the model will change the "understanding" of the text, which can affect retrieval quality.
+---
 
-4. Llama Model (Ollama)
-This is the generative model that provides the final answer.
+## Performance Tips
+1. **Faster processing:** Increase `sentences_per_chunk` and `batch_size`.  
+2. **Memory efficiency:** Reduce `batch_size`.  
+3. **Longer answers:** Increase LLaMA `num_predict` tokens.  
+4. **Caching:** Consider saving FAISS index and embeddings to avoid reprocessing PDFs each run.
 
-Code Location: Change the OLLAMA_MODEL variable at the top of the script:
+---
 
-OLLAMA_MODEL = "llama3.2:1b"
+## Dependencies
 
-Impact:
+- `pandas` – for managing chunks and embeddings.
+- `PyPDF2` – PDF text extraction.
+- `sentence-transformers` – generating semantic embeddings.
+- `faiss-cpu` – similarity search.
+- `numpy` – numerical operations.
+- `subprocess` – calling LLaMA model via Ollama.
 
-You can replace this with any model you have downloaded with Ollama (e.g., "mistral", "llama3", "gemma").
-
-Larger models (e.g., llama3:8b) may provide more coherent and detailed answers but will be slower and require more system resources. Smaller models (like llama3.2:1b) are faster and ideal for systems with less powerful hardware.
+---
