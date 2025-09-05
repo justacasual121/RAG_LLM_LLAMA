@@ -34,7 +34,7 @@ def chunk_text(text, sentences_per_chunk=10):
 def build_faiss_index(chunks, batch_size=32):
     embedder = SentenceTransformer("all-distilroberta-v1")
     
-    # Batch encoding without progress bar
+    
     embeddings = embedder.encode(
         chunks,
         batch_size=batch_size
