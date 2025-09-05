@@ -32,7 +32,7 @@ def chunk_text(text, sentences_per_chunk=10):
 
 
 def build_faiss_index(chunks, batch_size=32):
-    embedder = SentenceTransformer("all-distilroberta-v1")
+    embedder = SentenceTransformer("all-MiniLM-L6-v2")
     
     
     embeddings = embedder.encode(
